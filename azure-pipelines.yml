@@ -1,0 +1,53 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: windows-latest
+
+steps:
+
+- task: VSBuild@1
+  inputs:
+    solution: '**\*.sqlproj'
+
+# - task: CopyFiles@2
+#   inputs:
+#     SourceFolder: '$(System.DefaultWorkingDirectory)'
+#     Contents: '**\bin\Debug\**'
+#     TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+# - task: PublishBuildArtifacts@1
+#   inputs:
+#     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+#     ArtifactName: 'dacpacbuild'
+#     publishLocation: 'Container'
+
+- task: SqlAzureDacpacDeployment@1
+  inputs:
+    azureSubscription: 'sql-db-conn'
+    AuthenticationType: 'server'
+    ServerName: 'dacpacserver.database.windows.net'
+    DatabaseName: 'dacpacdb-prod'
+    SqlUsername: '$(DB-USERNAME)'
+    SqlPassword: '$(DB-PASSWORD)'
+    deployType: 'DacpacTask'
+    DeploymentAction: 'Publish'
+    DacpacFile: '$(System.DefaultWorkingDirectory)\sql_scripts\bin\Debug\sql_scripts.dacpac'
+    AdditionalArguments: '/p:DropObjectsNotInSource=true'
+    IpDetectionMethod: 'AutoDetect'
+
+# - task: SqlDacpacDeploymentOnMachineGroup@0
+#   inputs:
+#     TaskType: 'dacpac'
+#     DacpacFile: '$(System.DefaultWorkingDirectory)\sql_scripts\bin\Debug\sql_scripts.dacpac'
+#     TargetMethod: 'server'
+#     ServerName: 'dacpacserver.database.windows.net'
+#     DatabaseName: 'dacpacdb-prod'
+#     AuthScheme: 'sqlServerAuthentication'
+#     SqlUsername: '$(DB-USERNAME)'
+#     SqlPassword: '$(DB-PASSWORD)'
